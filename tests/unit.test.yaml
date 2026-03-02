@@ -3,12 +3,12 @@ base_url: http://127.0.0.1:8000/
 user_id_not_found: 1234567890
 
 steps:
-  - name: Создать пользователя
+  - name: Create user
     request:
       method: POST
       url: /users
       json:
-        name: "Иван"
+        name: "Ivan"
         email: "ivan@example.com"
     expect:
       status: 200
@@ -16,7 +16,7 @@ steps:
       user_id: null
 
 
-  - name: Получить пользователя
+  - name: Get user
     request:
       method: GET
       url: "/users/{{user_id}}"
@@ -24,11 +24,11 @@ steps:
     expect:
       status: 200
       json:
-        name: "Иван"
+        name: "Ivan"
         email: "ivan@example.com"
 
 
-  - name: Удалить существующего пользователя
+  - name: Delete existing user
     request:
       method: DELETE
       url: "/users/{{user_id}}"
@@ -38,7 +38,7 @@ steps:
         status: User deleted
 
 
-  - name: Удалить несуществующего пользователя
+  - name: Delete non-existing user
     request:
       method: DELETE
       url: "/users/{{user_id_not_found}}"
