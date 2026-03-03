@@ -11,10 +11,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-          
+
       - name: install ruff
         run: pip install ruff
 
-      - name: run ruff
+      - name: run ruff check
         run: ruff check .
+      
+      - name: run ruff format
         run: ruff format .
