@@ -39,14 +39,16 @@ class Runner:
 
         print("Test has been completed")
 
+    def run_all_tests(self):
+        print("-" * 10)
+        for file in search_files(os.getcwd(), ".", []):
+            self.run_test(file)
+            print("-" * 10)
+
 
 if __name__ == "__main__":
-    path = os.getcwd()
-    run = Runner(
+    runner = Runner(
         DataExtractor(),
         TemplateRenderer(),
     )
-    print("-" * 10)
-    for file in search_files(path, ".", []):
-        run.run_test(file)
-        print("-" * 10)
+    runner.run_all_tests()
