@@ -4,6 +4,12 @@ from step_executor import StepExecutor
 from extractor import DataExtractor
 from render import TemplateRenderer
 
+
+class Runner:
+    def __init__(self):
+        pass
+
+
 if __name__ == "__main__":
     path = os.getcwd()
     data_extractor = DataExtractor()

@@ -8,5 +8,5 @@ steps:
       url: 'https://ya.ru'
   expect:
     status: 200
-    body:
+    text:
       contains: 'https://clck.ru/344HLX'

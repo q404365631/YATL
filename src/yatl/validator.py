@@ -2,9 +2,9 @@ import json
 
 
 class Response:
-    def __init__(self, status_code, json_data):
+    def __init__(self, status_code: int, body: dict):
         self.status_code = status_code
-        self.json_data = json_data
+        self.body = body
 
 
 class ResponseValidator:
@@ -19,7 +19,7 @@ class ResponseValidator:
                 f"Expected status {expected_status}, got {self.response.status_code}"
             )
 
-        expected_json = self.expect_spec.get("json")
+        expected_json = self.expect_spec.get("body")
         if expected_json is not None:
             try:
                 resp_json = self.response.json()

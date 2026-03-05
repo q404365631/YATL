@@ -15,9 +15,9 @@ class StepExecutor:
         self.data_extractor = data_extractor
         self.template_renderer = template_renderer
 
-    def run_step(self, step, context):
+    def run_step(self, step: str, context: dict):
         resolved_step = self.template_renderer.render_data(step, context)
-        self.request_builder = RequestBuilder(step, context, resolved_step)
+        self.request_builder = RequestBuilder(context, resolved_step)
         response = requests.request(**self.request_builder.build())
         if "expect" in resolved_step:
             validator = ResponseValidator(response, resolved_step["expect"])
@@ -31,8 +31,9 @@ class StepExecutor:
 
     def create_context(self, test_spec: dict):
         context = {}
+        stop = "steps"
         for k, v in test_spec.items():
-            if k == "steps":
+            if k == stop:
                 return context
             context[k] = v
         return context
