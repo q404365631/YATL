@@ -1,0 +1,13 @@
+name: test clck.ru
+base_url: https://clck.ru
+steps:
+- name: test clck.ru
+  request:
+    url: 'https://clck.ru/--'
+    method: POST
+    params:
+      url: 'https://ya.ru'
+  expect:
+    status: 200
+    body:
+      contains: 'https://clck.ru/344HLX'

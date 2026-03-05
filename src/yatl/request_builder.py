@@ -1,5 +1,3 @@
-
-
 class RequestBuilder:
     def __init__(self, step, context: dict, resolved_step: dict):
         self.step = step
@@ -16,7 +14,7 @@ class RequestBuilder:
             url = base_url.rstrip("/") + "/" + url.lstrip("/")
 
         headers = request_data.get("headers", {})
-        json_body = request_data.get("json")
+        json_body = request_data.get("body")
         params = request_data.get("params")
         cookies = request_data.get("cookies")
         return {
