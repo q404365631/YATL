@@ -1,8 +1,11 @@
+from requests import Response
+
+
 class DataExtractor:
     def __init__(self):
         pass
 
-    def extract(self, response, extract_spec):
+    def extract(self, response: Response, extract_spec: dict):
         extracted = {}
         if response.headers.get("content-type") == "application/json":
             resp_json = response.json()
