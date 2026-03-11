@@ -1,3 +1,12 @@
+class HttpMessage:
+    def __init__(self, headers: dict, content_type: str = None):
+        self.headers = headers or {}
+        self.content_type = content_type or "application/json"
+
+    def get_content_type(self) -> str:
+        return self.headers.get("Content-Type", "application/json")
+
+
 class RequestBuilder:
     def __init__(self, context: dict, resolved_step: dict):
         self.context = context
@@ -14,15 +23,16 @@ class RequestBuilder:
         timeout = request_data.get("timeout", None)
         url = self._build_url(url)
         headers = request_data.get("headers", {})
-        body = request_data.get("body")
-        params = request_data.get("params")
-        cookies = request_data.get("cookies")
+        body: dict = request_data.get("body", {})
+        json = body.get("json")
+        params = request_data.get("params", {})
+        cookies = request_data.get("cookies", {})
         return {
             "method": method,
             "url": url,
             "timeout": timeout,
             "headers": headers,
-            "json": body,
+            "json": json,
             "params": params,
             "cookies": cookies,
         }

@@ -3,12 +3,6 @@
 Yatl is a simple testing language that allows you to write tests in YAML. 
 You can using this framework to write tests for your applications and integration to CI/CD.
 
-## Installation
-
-```bash
-pip install yatl
-```
-
 for example, create **example.test.yaml** and write the following code:
 
 ```yaml
@@ -42,7 +36,8 @@ The test file should contain the following fields:
         url: the url to be requested
         method: the http method to be used
         headers: the headers to be used
-        body: the body to be sent
+        body:
+          json: the body to be sent as json
         params: the params to be used
       expect: the expected response
         status: the expected status code

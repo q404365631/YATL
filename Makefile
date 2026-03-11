@@ -4,8 +4,8 @@ check:
 format:
 	poetry run ruff format .
 
-make run_server:
-	poetry run python src/yatl/test_server.py
+run_server:
+	poetry run python src/yatl/server.py
 
-make run_tests:
+run_tests:
 	poetry run python src/yatl/run.py

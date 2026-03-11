@@ -28,8 +28,9 @@ class Runner:
     def run_test(self, yaml_path: str):
 
         test_spec = self._load_test(yaml_path)
+        if test_spec is None:
+            return
         context = self._create_context(test_spec)
-
         print(f"Run test: {test_spec.get('name', '')}")
         steps = test_spec.get("steps", [])
         for i, step in enumerate(steps, start=1):
