@@ -42,5 +42,5 @@ jobs:
         run: poetry install
 
       - name: run tests
-        run: poetry run python3 src/yatl/run.py
+        run: poetry run python -m src.yatl.run
 
