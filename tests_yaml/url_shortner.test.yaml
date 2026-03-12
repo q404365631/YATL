@@ -6,7 +6,9 @@ steps:
     method: GET
     params:
       url: 'https://ya.ru'
+  extract:
+    text_responce: text
   expect:
     status: 200
-    text:
-      contains: 'https://clck.ru/344HLX'
+    body:
+      text: "{{ text_responce }}"

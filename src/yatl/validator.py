@@ -183,12 +183,15 @@ class ResponseValidator:
             self._validate_json_body(body_spec["json"])
         elif "xml" in content_type and "xml" in body_spec:
             self._validate_xml_body(body_spec["xml"])
-        elif "text/plain" in content_type and "text" in body_spec:
+        elif content_type.startswith("text/") and "text" in body_spec:
             self._validate_text_body(body_spec["text"])
         else:
             # Fallback: try to validate as JSON if body_spec is dict
             if isinstance(body_spec, dict) and "json" in body_spec:
                 self._validate_json_body(body_spec["json"])
+            elif "text" in body_spec:
+                # If user explicitly expects text, validate regardless of content-type
+                self._validate_text_body(body_spec["text"])
             else:
                 raise AssertionError(
                     f"Unsupported body validation for content-type: {content_type}"

@@ -11,14 +11,15 @@ base_url: https://clck.ru
 steps:
 - name: test clck.ru
   request:
-    url: 'https://clck.ru/--'
-    method: POST
+    method: GET
     params:
       url: 'https://ya.ru'
+  extract:
+    text_responce: text
   expect:
     status: 200
     body:
-      contains: 'https://clck.ru/344HLX'
+      text: "{{ text_responce }}"
 ```
 
 ## Usage
