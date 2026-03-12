@@ -9,7 +9,7 @@ ENV/
 
 *.db
 *.sqlite
-
+.pytest_cache
 *.log
 
 *.tmp
