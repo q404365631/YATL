@@ -1,5 +1,5 @@
 name: test clck.ru
-scip: true
+skip: true
 base_url: https://clck.ru
 steps:
 - name: test clck.ru

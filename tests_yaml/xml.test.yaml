@@ -1,6 +1,6 @@
 name: XML and Text endpoints test
 base_url: http://localhost:8000
-scip: true
+skip: true
 
 steps:
   - name: Get XML

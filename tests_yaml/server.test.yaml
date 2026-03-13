@@ -1,6 +1,6 @@
 name: test server
 base_url: http://127.0.0.1:8000
-scip: true
+skip: true
 steps:
 - name: create user
   request:

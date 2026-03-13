@@ -1,5 +1,5 @@
 name: ping
-# scip: true
+skip: true
 base_url: https://yandex.ru
 
 steps:
