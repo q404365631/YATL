@@ -71,6 +71,9 @@ class Runner:
         if test_spec is None:
             return
         context = self.create_context(test_spec)
+        if context.get("scip", False):
+            print(test_spec.get("name", "") + " skipped")
+            return
         print(f"Run test: {test_spec.get('name', '')}")
         steps = test_spec.get("steps", [])
         for i, step in enumerate(steps, start=1):

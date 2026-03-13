@@ -87,7 +87,7 @@ class ResponseValidator:
         """Validates that the JSON response matches the expected structure.
 
         Args:
-            expected_json: A dictionary of expected key‑value pairs.
+            expected_json: A dictionary of expected key-value pairs.
                 Nested dictionaries are validated recursively.
 
         Raises:
@@ -148,7 +148,7 @@ class ResponseValidator:
                 )
 
     def _validate_text_body(self, expected_text: str):
-        """Validates that the plain‑text response contains a given substring.
+        """Validates that the plain-text response contains a given substring.
 
         Args:
             expected_text: The substring that must appear in the response body.
@@ -165,7 +165,7 @@ class ResponseValidator:
     def check_expectations(self):
         """Runs all validations defined in the expectation spec.
 
-        Validates status, headers, and body (based on content‑type). The body
+        Validates status, headers, and body (based on content-type). The body
         validation is dispatched to the appropriate method (JSON, XML, or text).
 
         Raises:

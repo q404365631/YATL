@@ -23,7 +23,7 @@ class User(BaseModel):
 @app.post("/users")
 def create_user(user: User):
     users[user.id] = {"name": user.name, "info": {"email": user.email}}
-    return {"message": "User created"}
+    return {"message": "User created", "id": user.id}
 
 
 @app.get("/users/{user_id}")
