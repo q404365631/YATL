@@ -31,6 +31,8 @@ class RequestBuilder:
             the base URL is ignored (but currently not implemented).
         """
         base_url: str = self.context.get("base_url", "")
+        if not base_url.startswith("http"):
+            base_url = "https://" + base_url
         return base_url.rstrip("/") + "/" + url.lstrip("/")
 
     def build_request_data(self) -> Dict[str, Any]:

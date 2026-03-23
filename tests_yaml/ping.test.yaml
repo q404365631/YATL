@@ -1,18 +1,16 @@
 name: ping
-base_url: https://yandex.ru
-skip: false
+base_url: https://google.com
 
 steps:
-- name: access_yandex
+- name: access_google
   request:
     method: GET
   expect:
     status: 200
 
 - name: failed_test
-  skip: true
   request:
     method: GET
     url: /not_found
   expect:
-    status: 200
+    status: 404
