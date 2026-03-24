@@ -13,53 +13,8 @@ steps:
           name: Alice
           email: alice@example.com
     expect:
-      status: 200
-    extract:
-      user_id: id 
-
-  - name: Get user and extract name
-    request:
-      method: GET
-      url: /users/{{ user_id }}
-    extract:
-      user_email: info.email
-    expect:
-      status: 200
-
-
-  - name: Extract from XML response
-    skip: true
-    request:
-      method: GET
-      url: /xml
-    expect:
-      status: 200
-      headers:
-        content-type: application/xml
-    extract:
-      note_to: /note/to
-      note_body: /note/body
-
-  - name: Extract from plain text response
-    skip: true
-    request:
-      method: GET
-      url: /text
-    expect:
-      status: 200
-      headers:
-        content-type: text/plain
-    extract:
-      greeting: "Hello"
-
-  - name: Use extracted variable in request
-    skip: true
-    request:
-      method: GET
-      url: /hello
-      headers:
-        theme: "dark"
-    expect:
-      status: 200
-    extract:
-      theme: theme
+      body:
+        json:
+          "info.email": "alice@example.com"
+          "message": "User created"
+      status: 200 

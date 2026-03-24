@@ -197,6 +197,19 @@ expect:
 
 Nested objects are supported. The validator checks exact equality.
 
+To validate deeply nested fields, you can use **dot notation** (as in the `extract` block). A key containing a dot is interpreted as a path to the value in the JSON response.
+
+Example: If the response contains `{"user": {"profile": {"email": "test@example.com"}}}`, you can validate the email like this:
+
+```yaml
+expect:
+  body:
+    json:
+      "user.profile.email": "test@example.com"
+```
+
+Dot notation also works with arrays (e.g., `items.0.name`).
+
 #### XML Body Validation
 
 ```yaml

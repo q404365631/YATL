@@ -100,10 +100,34 @@ class ResponseValidator:
             raise AssertionError("Response is not valid JSON")
         self._validate_json_response(data, expected_json)
 
+    def _get_nested_value(self, data: Any, path: str) -> Any:
+        """Retrieve a value from a nested dict using dot notation.
+
+        Args:
+            data: A dictionary (or list) containing the data.
+            path: A dot-separated string representing the path (e.g., "user.email").
+
+        Returns:
+            The value at the given path.
+
+        Raises:
+            ValueError: If any component of the path does not exist.
+        """
+        keys = path.split(".")
+        current = data
+        for key in keys:
+            if isinstance(current, dict) and key in current:
+                current = current[key]
+            else:
+                raise ValueError(f"Path component '{key}' not found in {current}")
+        return current
+
     def _validate_json_response(
         self, data: dict[str, Any], expected_json: dict[str, Any]
     ):
         """Recursively validates a JSON object against an expected dictionary.
+
+        Supports dot‑notation keys for validating deep nested fields.
 
         Args:
             data: The actual JSON dictionary (or sub-dictionary).
@@ -112,15 +136,28 @@ class ResponseValidator:
         Raises:
             AssertionError: If a key is missing or a value mismatches.
         """
-        for key, value in expected_json.items():
-            if key not in data:
-                raise AssertionError(f"Key '{key}' is missing in response")
-            if isinstance(data[key], dict) and isinstance(value, dict):
-                self._validate_json_response(data[key], value)
-            elif data[key] != value:
-                raise AssertionError(
-                    f"For key '{key}' expected '{value}', got '{data[key]}'"
-                )
+        for key, expected_value in expected_json.items():
+            if "." in key:
+                # Dot notation path
+                try:
+                    actual = self._get_nested_value(data, key)
+                except ValueError as e:
+                    raise AssertionError(f"Path '{key}' not found in response: {e}")
+                if actual != expected_value:
+                    raise AssertionError(
+                        f"For path '{key}' expected '{expected_value}', got '{actual}'"
+                    )
+            else:
+                # Plain key
+                if key not in data:
+                    raise AssertionError(f"Key '{key}' is missing in response")
+                actual = data[key]
+                if isinstance(actual, dict) and isinstance(expected_value, dict):
+                    self._validate_json_response(actual, expected_value)
+                elif actual != expected_value:
+                    raise AssertionError(
+                        f"For key '{key}' expected '{expected_value}', got '{actual}'"
+                    )
 
     def _validate_xml_body(self, expected_xml: dict[str, Any]):
         """Validates that the XML response contains elements with expected text.
