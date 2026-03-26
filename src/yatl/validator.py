@@ -2,7 +2,137 @@ from requests import Response
 from typing import Any
 import json
 from lxml import etree
-from .utils import content_type, get_nested_value
+from .utils import get_content_type, get_nested_value
+from abc import ABC, abstractmethod
+
+
+class BodyValidator(ABC):
+    """Base class for body validators.
+
+    Subclasses should implement the `validate` method.
+    """
+
+    @abstractmethod
+    def validate(self, response: Response, expected: Any):
+        """Validate the response body against expected specification.
+
+        Args:
+            response: HTTP response object.
+            expected: The expected body specification (format depends on subclass).
+
+        Raises:
+            AssertionError: If validation fails.
+        """
+        pass
+
+
+class JsonBodyValidator(BodyValidator):
+    """Validates JSON response body."""
+
+    def validate(self, response: Response, expected_json: dict[str, Any]):
+        """Validates that the JSON response matches the expected structure.
+
+        Args:
+            response: The HTTP response containing JSON data.
+            expected_json: A dictionary of expected key-value pairs.
+                Nested dictionaries are validated recursively.
+
+        Raises:
+            AssertionError: If the response is not valid JSON, or any key
+                is missing, or any value differs.
+        """
+        try:
+            data = response.json()
+        except json.JSONDecodeError:
+            raise AssertionError("Response is not valid JSON")
+        self._validate_json_response(data, expected_json)
+
+    def _validate_json_response(
+        self, data: dict[str, Any], expected_json: dict[str, Any]
+    ):
+        """Recursively validates a JSON object against an expected dictionary.
+
+        Supports dot-notation keys for validating deep nested fields.
+
+        Args:
+            data: The actual JSON dictionary (or sub-dictionary).
+            expected_json: The expected dictionary for this level.
+
+        Raises:
+            AssertionError: If a key is missing or a value mismatches.
+        """
+        for key, expected_value in expected_json.items():
+            if "." in key:
+                # Dot notation path
+                try:
+                    actual = get_nested_value(data, key)
+                except ValueError as e:
+                    raise AssertionError(f"Path '{key}' not found in response: {e}")
+                if actual != expected_value:
+                    raise AssertionError(
+                        f"For path '{key}' expected '{expected_value}', got '{actual}'"
+                    )
+            else:
+                # Plain key
+                if key not in data:
+                    raise AssertionError(f"Key '{key}' is missing in response")
+                actual = data[key]
+                if isinstance(actual, dict) and isinstance(expected_value, dict):
+                    self._validate_json_response(actual, expected_value)
+                elif actual != expected_value:
+                    raise AssertionError(
+                        f"For key '{key}' expected '{expected_value}', got '{actual}'"
+                    )
+
+
+class XmlBodyValidator(BodyValidator):
+    """Validates XML response body."""
+
+    def validate(self, response: Response, expected_xml: dict[str, Any]):
+        """Validates that the XML response contains elements with expected text.
+
+        Args:
+            response: The HTTP response containing XML data.
+            expected_xml: A dictionary mapping XPath expressions to expected
+                text values.
+
+        Raises:
+            AssertionError: If the response is not valid XML, an XPath matches
+                no elements, or the text of the first matching element differs.
+        """
+        try:
+            root = etree.fromstring(response.content)
+        except etree.XMLSyntaxError:
+            raise AssertionError("Response is not valid XML")
+        for xpath, expected_value in expected_xml.items():
+            elements = root.xpath(xpath)
+            if not elements:
+                raise AssertionError(f"XML element with xpath '{xpath}' not found")
+            actual = elements[0].text
+            if actual != expected_value:
+                raise AssertionError(
+                    f"XML element '{xpath}' expected '{expected_value}', got '{actual}'"
+                )
+
+
+class TextBodyValidator(BodyValidator):
+    """Validates plain-text response body."""
+
+    def validate(self, response: Response, expected_text: str):
+        """Validates that the plain-text response contains a given substring.
+
+        Args:
+            response: The HTTP response with text content.
+            expected_text: The substring that must appear in the response body.
+
+        Raises:
+            AssertionError: If the substring is not found.
+        """
+        actual_text = response.text
+        if expected_text not in actual_text:
+            raise AssertionError(
+                f"Expected text '{expected_text}' not found in response"
+            )
 
 
 class ResponseValidator:
@@ -12,6 +142,13 @@ class ResponseValidator:
     or plain text). Validation failures raise `AssertionError` with descriptive
     messages.
     """
+
+    # Mapping from content-type keywords to body validator instances
+    _body_validators = {
+        "json": JsonBodyValidator(),
+        "xml": XmlBodyValidator(),
+        "text": TextBodyValidator(),
+    }
 
     def __init__(self, response: Response, expect_spec: dict[str, Any]):
         """Initializes the validator with a response and expectation spec.
@@ -74,105 +211,28 @@ class ResponseValidator:
                         f"Header '{key}' expected '{norm_expected}', got '{norm_actual}' (original: '{actual}')"
                     )
 
-    def _validate_json_body(self, expected_json: dict[str, Any]):
-        """Validates that the JSON response matches the expected structure.
+    def _get_body_validator(self, content_type: str):
+        """Return appropriate body validator based on content-type.
 
         Args:
-            expected_json: A dictionary of expected key-value pairs.
-                Nested dictionaries are validated recursively.
+            content_type: The content-type string.
 
-        Raises:
-            AssertionError: If the response is not valid JSON, or any key
-                is missing, or any value differs.
+        Returns:
+            A BodyValidator instance or None if no match.
         """
-        try:
-            data = self.response.json()
-        except json.JSONDecodeError:
-            raise AssertionError("Response is not valid JSON")
-        self._validate_json_response(data, expected_json)
-
-    def _validate_json_response(
-        self, data: dict[str, Any], expected_json: dict[str, Any]
-    ):
-        """Recursively validates a JSON object against an expected dictionary.
-
-        Supports dot-notation keys for validating deep nested fields.
-
-        Args:
-            data: The actual JSON dictionary (or sub-dictionary).
-            expected_json: The expected dictionary for this level.
-
-        Raises:
-            AssertionError: If a key is missing or a value mismatches.
-        """
-        for key, expected_value in expected_json.items():
-            if "." in key:
-                # Dot notation path
-                try:
-                    actual = get_nested_value(data, key)
-                except ValueError as e:
-                    raise AssertionError(f"Path '{key}' not found in response: {e}")
-                if actual != expected_value:
-                    raise AssertionError(
-                        f"For path '{key}' expected '{expected_value}', got '{actual}'"
-                    )
-            else:
-                # Plain key
-                if key not in data:
-                    raise AssertionError(f"Key '{key}' is missing in response")
-                actual = data[key]
-                if isinstance(actual, dict) and isinstance(expected_value, dict):
-                    self._validate_json_response(actual, expected_value)
-                elif actual != expected_value:
-                    raise AssertionError(
-                        f"For key '{key}' expected '{expected_value}', got '{actual}'"
-                    )
-
-    def _validate_xml_body(self, expected_xml: dict[str, Any]):
-        """Validates that the XML response contains elements with expected text.
-
-        Args:
-            expected_xml: A dictionary mapping XPath expressions to expected
-                text values.
-
-        Raises:
-            AssertionError: If the response is not valid XML, an XPath matches
-                no elements, or the text of the first matching element differs.
-        """
-        try:
-            root = etree.fromstring(self.response.content)
-        except etree.XMLSyntaxError:
-            raise AssertionError("Response is not valid XML")
-        for xpath, expected_value in expected_xml.items():
-            elements = root.xpath(xpath)
-            if not elements:
-                raise AssertionError(f"XML element with xpath '{xpath}' not found")
-            actual = elements[0].text
-            if actual != expected_value:
-                raise AssertionError(
-                    f"XML element '{xpath}' expected '{expected_value}', got '{actual}'"
-                )
-
-    def _validate_text_body(self, expected_text: str):
-        """Validates that the plain-text response contains a given substring.
-
-        Args:
-            expected_text: The substring that must appear in the response body.
-
-        Raises:
-            AssertionError: If the substring is not found.
-        """
-        actual_text = self.response.text
-        if expected_text not in actual_text:
-            raise AssertionError(
-                f"Expected text '{expected_text}' not found in response"
-            )
+        if "json" in content_type:
+            return self._body_validators["json"]
+        elif "xml" in content_type:
+            return self._body_validators["xml"]
+        elif content_type.startswith("text/"):
+            return self._body_validators["text"]
+        return None
 
     def check_expectations(self):
         """Runs all validations defined in the expectation spec.
 
         Validates status, headers, and body (based on content-type). The body
-        validation is dispatched to the appropriate method (JSON, XML, or text).
+        validation is dispatched to the appropriate validator (JSON, XML, or text).
 
         Raises:
             AssertionError: If any validation fails.
@@ -184,21 +244,35 @@ class ResponseValidator:
         if body_spec is None:
             return
 
-        cnt_type = content_type(response=self.response)
-        if "json" in cnt_type and "json" in body_spec:
-            self._validate_json_body(body_spec["json"])
-        elif "xml" in cnt_type and "xml" in body_spec:
-            self._validate_xml_body(body_spec["xml"])
-        elif cnt_type.startswith("text/") and "text" in body_spec:
-            self._validate_text_body(body_spec["text"])
+        content_type = get_content_type(response=self.response)
+
+        validator = self._get_body_validator(content_type)
+        if validator is not None:
+            if isinstance(validator, JsonBodyValidator) and "json" in body_spec:
+                validator.validate(self.response, body_spec["json"])
+            elif isinstance(validator, XmlBodyValidator) and "xml" in body_spec:
+                validator.validate(self.response, body_spec["xml"])
+            elif isinstance(validator, TextBodyValidator) and "text" in body_spec:
+                validator.validate(self.response, body_spec["text"])
+            else:
+                if isinstance(body_spec, dict) and "json" in body_spec:
+                    self._body_validators["json"].validate(
+                        self.response, body_spec["json"]
+                    )
+                elif "text" in body_spec:
+                    self._body_validators["text"].validate(
+                        self.response, body_spec["text"]
+                    )
+                else:
+                    raise AssertionError(
+                        f"Unsupported body validation for content-type: {content_type}"
+                    )
         else:
-            # Fallback: try to validate as JSON if body_spec is dict
             if isinstance(body_spec, dict) and "json" in body_spec:
-                self._validate_json_body(body_spec["json"])
+                self._body_validators["json"].validate(self.response, body_spec["json"])
             elif "text" in body_spec:
-                # If user explicitly expects text, validate regardless of content-type
-                self._validate_text_body(body_spec["text"])
+                self._body_validators["text"].validate(self.response, body_spec["text"])
             else:
                 raise AssertionError(
-                    f"Unsupported body validation for content-type: {cnt_type}"
+                    f"Unsupported body validation for content-type: {content_type}"
                 )

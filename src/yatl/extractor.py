@@ -3,7 +3,7 @@ from typing import Any
 import json
 import re
 from lxml import etree
-from .utils import content_type, get_nested_value
+from .utils import get_content_type, get_nested_value
 
 
 class DataExtractor:
@@ -139,29 +139,26 @@ class DataExtractor:
         Returns:
             One of 'json', 'xml', 'text', or 'unknown'.
         """
-        cnt_type = content_type(response)
-        if "json" in cnt_type:
+        content_type = get_content_type(response)
+        if "json" in content_type:
             return "json"
-        if "xml" in cnt_type:
+        if "xml" in content_type:
             return "xml"
-        if "text/plain" in cnt_type or "text/html" in cnt_type:
+        if "text/plain" in content_type or "text/html" in content_type:
             return "text"
 
-        # No clear header – attempt to parse as JSON
         try:
             response.json()
             return "json"
         except json.JSONDecodeError:
             pass
 
-        # Attempt to parse as XML
         try:
             etree.fromstring(response.content)
             return "xml"
         except etree.XMLSyntaxError:
             pass
 
-        # Fallback to text
         return "text"
 
     def extract(

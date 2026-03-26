@@ -57,7 +57,7 @@ def search_files(current_path: str, item: str, files: list):
     return files
 
 
-def content_type(response: Response) -> str:
+def get_content_type(response: Response) -> str:
     """Extracts the media type from the response's Content-Type header.
 
     Returns:
