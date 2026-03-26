@@ -26,7 +26,7 @@ jobs:
         run: ruff format .
       
       
-  tests:
+  tests_yaml:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,4 +43,23 @@ jobs:
 
       - name: run tests
         run: poetry run python -m src.yatl.run
+
+
+  unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.14
+
+      - name: install poetry
+        run: pip install poetry
+
+      - name: install dependencies
+        run: poetry install
+
+      - name: run tests
+        run: poetry run pytest
 

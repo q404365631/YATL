@@ -1,7 +1,8 @@
 import pytest
+from yatl.utils import get_nested_value
 
 
-def test_get_nested_value(data_extractor):
+def test_get_nested_value():
     data = {
         "id": 1,
         "info": {
@@ -10,10 +11,10 @@ def test_get_nested_value(data_extractor):
         },
     }
     path = "info.age"
-    assert data_extractor._get_nested_value(data, path) == 32
+    assert get_nested_value(data, path) == 32
 
 
-def test_get_nested_not_found_value(data_extractor):
+def test_get_nested_not_found_value():
     data = {
         "id": 1,
         "info": {
@@ -23,4 +24,4 @@ def test_get_nested_not_found_value(data_extractor):
     }
     path = "info.user.age"
     with pytest.raises(ValueError):
-        data_extractor._get_nested_value(data, path)
+        get_nested_value(data, path)
