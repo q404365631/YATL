@@ -4,20 +4,71 @@ import json
 import re
 from lxml import etree
 from .utils import get_content_type, get_nested_value
+from abc import ABC, abstractmethod
 
 
-class DataExtractor:
-    """Extracts data from HTTP responses based on a specification.
+class Extractor(ABC):
+    """Abstract base class for extractors."""
 
-    Supports JSON, XML, and text responses. Automatically detects content type
-    and applies the appropriate extraction method.
-    """
+    @abstractmethod
+    def extract(
+        self, response: Response, extract_spec: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Extracts data from a response according to the specification.
 
-    def __init__(self):
-        """Initializes the data extractor."""
-        pass
+        Args:
+            response: The HTTP response to extract from.
+            extract_spec: A dictionary specifying how to extract data.
 
-    def _extract_json(
+        Returns:
+            A dictionary with the extracted data.
+        """
+
+
+class XmlExtractor(Extractor):
+    """Extracts data from XML responses."""
+
+    def extract(
+        self, response: Response, extract_spec: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Extracts fields from an XML response using XPath or tag names.
+
+        Args:
+            response: The HTTP response containing XML data.
+            extract_spec: A dictionary mapping output keys to XPath expressions.
+                If an XPath is None, the key is used as a tag name for `findall`.
+
+        Returns:
+            A dictionary with the extracted text of the first matching element.
+
+        Raises:
+            ValueError: If the response is not valid XML, or no element matches
+                the given XPath/tag.
+        """
+        extracted = {}
+        try:
+            root = etree.fromstring(response.content)
+        except etree.XMLSyntaxError:
+            raise ValueError("Response is not valid XML")
+
+        for key, xpath in extract_spec.items():
+            if xpath is None:
+                # Use key as tag name
+                elements = root.findall(key)
+            else:
+                elements = root.xpath(xpath)
+            if elements:
+                # Take first element's text
+                extracted[key] = elements[0].text
+            else:
+                raise ValueError(f"XML element '{key}' not found with xpath '{xpath}'")
+        return extracted
+
+
+class JsonExtractor(Extractor):
+    """Extracts data from JSON responses."""
+
+    def extract(
         self,
         response: Response,
         extract_spec: dict[str, Any],
@@ -58,43 +109,11 @@ class DataExtractor:
                     raise ValueError(f"Failed to extract '{key}' at path '{path}': {e}")
         return extracted
 
-    def _extract_xml(
-        self, response: Response, extract_spec: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Extracts fields from an XML response using XPath or tag names.
 
-        Args:
-            response: The HTTP response containing XML data.
-            extract_spec: A dictionary mapping output keys to XPath expressions.
-                If an XPath is None, the key is used as a tag name for `findall`.
+class TextExtractor(Extractor):
+    """Extracts data from plain-text or HTML responses."""
 
-        Returns:
-            A dictionary with the extracted text of the first matching element.
-
-        Raises:
-            ValueError: If the response is not valid XML, or no element matches
-                the given XPath/tag.
-        """
-        extracted = {}
-        try:
-            root = etree.fromstring(response.content)
-        except etree.XMLSyntaxError:
-            raise ValueError("Response is not valid XML")
-
-        for key, xpath in extract_spec.items():
-            if xpath is None:
-                # Use key as tag name
-                elements = root.findall(key)
-            else:
-                elements = root.xpath(xpath)
-            if elements:
-                # Take first element's text
-                extracted[key] = elements[0].text
-            else:
-                raise ValueError(f"XML element '{key}' not found with xpath '{xpath}'")
-        return extracted
-
-    def _extract_text(
+    def extract(
         self, response: Response, extract_spec: dict[str, Any]
     ) -> dict[str, Any]:
         """Extracts substrings from a plain-text or HTML response.
@@ -133,6 +152,24 @@ class DataExtractor:
                     raise ValueError(f"Regex '{pattern}' not found in text")
         return extracted
 
+
+class DataExtractor:
+    """Extracts data from HTTP responses based on a specification.
+
+    Supports JSON, XML, and text responses. Automatically detects content type
+    and applies the appropriate extraction method.
+    """
+
+    _extractors = {
+        "json": JsonExtractor(),
+        "xml": XmlExtractor(),
+        "text": TextExtractor(),
+    }
+
+    def __init__(self):
+        """Initializes the data extractor."""
+        pass
+
     def _detect_format(self, response: Response) -> str:
         """Try to guess the response format based on content.
 
@@ -159,7 +196,7 @@ class DataExtractor:
         except etree.XMLSyntaxError:
             pass
 
-        return "text"
+        return "unknown"
 
     def extract(
         self, response: Response, extract_spec: dict[str, Any]
@@ -183,12 +220,7 @@ class DataExtractor:
                 extraction also fails.
         """
         fmt = self._detect_format(response)
-
-        if fmt == "json":
-            return self._extract_json(response, extract_spec)
-        elif fmt == "xml":
-            return self._extract_xml(response, extract_spec)
-        elif fmt == "text":
-            return self._extract_text(response, extract_spec)
-        else:
-            raise ValueError("Unsupported response format")
+        extractor = self._extractors.get(fmt)
+        if extractor is None:
+            raise ValueError(f"Unsupported content type: {fmt}")
+        return extractor.extract(response, extract_spec)
