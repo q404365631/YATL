@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 
 
 class BodyValidator(ABC):
-    """Base class for body validators.
+    """Abstract base class for body validators.
 
     Subclasses should implement the `validate` method.
     """

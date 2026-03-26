@@ -23,6 +23,7 @@ class Extractor(ABC):
         Returns:
             A dictionary with the extracted data.
         """
+        pass
 
 
 class XmlExtractor(Extractor):
