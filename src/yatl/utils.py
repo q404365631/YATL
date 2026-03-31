@@ -1,8 +1,8 @@
 from itertools import takewhile
 import yaml
 import os
-from requests import Response
 from typing import Any
+from requests import Response
 
 
 def create_context(test_spec: dict):

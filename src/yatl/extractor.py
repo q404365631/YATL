@@ -3,7 +3,7 @@ from typing import Any
 import json
 import re
 from lxml import etree
-from .utils import get_content_type, get_nested_value
+from .utils import get_nested_value, get_content_type
 from abc import ABC, abstractmethod
 
 

@@ -2,8 +2,36 @@ from requests import Response
 from typing import Any
 import json
 from lxml import etree
-from .utils import get_content_type, get_nested_value
+from .utils import get_nested_value, get_content_type
 from abc import ABC, abstractmethod
+from enum import Enum
+
+
+class BodyFormat(Enum):
+    """Enum for supported body formats."""
+
+    JSON = "json"
+    XML = "xml"
+    TEXT = "text"
+
+    @classmethod
+    def from_content_type(cls, content_type: str) -> "BodyFormat":
+        """Determines the body format from the content type.
+
+        Args:
+            content_type: The content type string.
+
+        Returns:
+            The corresponding BodyFormat enum value.
+        """
+        if content_type == "application/json":
+            return cls.JSON
+        elif content_type == "application/xml":
+            return cls.XML
+        elif content_type == "text/plain":
+            return cls.TEXT
+        else:
+            raise ValueError(f"Unsupported content type: {content_type}")
 
 
 class BodyValidator(ABC):
@@ -143,11 +171,10 @@ class ResponseValidator:
     messages.
     """
 
-    # Mapping from content-type keywords to body validator instances
     _body_validators = {
-        "json": JsonBodyValidator(),
-        "xml": XmlBodyValidator(),
-        "text": TextBodyValidator(),
+        BodyFormat.JSON: JsonBodyValidator(),
+        BodyFormat.XML: XmlBodyValidator(),
+        BodyFormat.TEXT: TextBodyValidator(),
     }
 
     def __init__(self, response: Response, expect_spec: dict[str, Any]):
@@ -220,12 +247,9 @@ class ResponseValidator:
         Returns:
             A BodyValidator instance or None if no match.
         """
-        if "json" in content_type:
-            return self._body_validators["json"]
-        elif "xml" in content_type:
-            return self._body_validators["xml"]
-        elif content_type.startswith("text/"):
-            return self._body_validators["text"]
+        format = BodyFormat.from_content_type(content_type)
+        if format in self._body_validators:
+            return self._body_validators[format]
         return None
 
     def check_expectations(self):
@@ -248,30 +272,43 @@ class ResponseValidator:
 
         validator = self._get_body_validator(content_type)
         if validator is not None:
-            if isinstance(validator, JsonBodyValidator) and "json" in body_spec:
-                validator.validate(self.response, body_spec["json"])
-            elif isinstance(validator, XmlBodyValidator) and "xml" in body_spec:
-                validator.validate(self.response, body_spec["xml"])
-            elif isinstance(validator, TextBodyValidator) and "text" in body_spec:
-                validator.validate(self.response, body_spec["text"])
+            if (
+                isinstance(validator, JsonBodyValidator)
+                and BodyFormat.JSON.value in body_spec
+            ):
+                validator.validate(self.response, body_spec[BodyFormat.JSON.value])
+            elif (
+                isinstance(validator, XmlBodyValidator)
+                and BodyFormat.XML.value in body_spec
+            ):
+                validator.validate(self.response, body_spec[BodyFormat.XML.value])
+            elif (
+                isinstance(validator, TextBodyValidator)
+                and BodyFormat.TEXT.value in body_spec
+            ):
+                validator.validate(self.response, body_spec[BodyFormat.TEXT.value])
             else:
-                if isinstance(body_spec, dict) and "json" in body_spec:
-                    self._body_validators["json"].validate(
-                        self.response, body_spec["json"]
+                if isinstance(body_spec, dict) and BodyFormat.JSON.value in body_spec:
+                    self._body_validators[BodyFormat.JSON.value].validate(
+                        self.response, body_spec[BodyFormat.JSON.value]
                     )
-                elif "text" in body_spec:
-                    self._body_validators["text"].validate(
-                        self.response, body_spec["text"]
+                elif BodyFormat.TEXT.value in body_spec:
+                    self._body_validators[BodyFormat.TEXT.value].validate(
+                        self.response, body_spec[BodyFormat.TEXT.value]
                     )
                 else:
                     raise AssertionError(
                         f"Unsupported body validation for content-type: {content_type}"
                     )
         else:
-            if isinstance(body_spec, dict) and "json" in body_spec:
-                self._body_validators["json"].validate(self.response, body_spec["json"])
-            elif "text" in body_spec:
-                self._body_validators["text"].validate(self.response, body_spec["text"])
+            if isinstance(body_spec, dict) and BodyFormat.JSON.value in body_spec:
+                self._body_validators[BodyFormat.JSON.value].validate(
+                    self.response, body_spec[BodyFormat.JSON.value]
+                )
+            elif BodyFormat.TEXT.value in body_spec:
+                self._body_validators[BodyFormat.TEXT.value].validate(
+                    self.response, body_spec[BodyFormat.TEXT.value]
+                )
             else:
                 raise AssertionError(
                     f"Unsupported body validation for content-type: {content_type}"
