@@ -1,4 +1,3 @@
-import os
 import concurrent.futures
 import yaml
 from typing import Any
