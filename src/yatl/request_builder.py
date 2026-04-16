@@ -33,11 +33,11 @@ def build_request_data(
         ValueError: If the body has an unsupported type.
     """
     request_data: Dict[str, Any] = resolved_step["request"]
-    method, url, timeout, headers, params, cookies, body = _extract_request_params(
+    method, url, timeout, headers, params, cookies, body = extract_request_params(
         request_data
     )
 
-    url = _build_url(context.get("base_url", ""), url)
+    url = build_url(context.get("base_url", ""), url)
 
     kwargs: Dict[str, Any] = {
         "method": method,
@@ -49,13 +49,13 @@ def build_request_data(
     }
 
     if body is not None:
-        _process_body(body, headers, kwargs)
+        process_body(body, headers, kwargs)
 
     kwargs["headers"] = headers
     return kwargs
 
 
-def _build_url(base_url: str, url: str) -> str:
+def build_url(base_url: str, url: str) -> str:
     """Constructs a full URL by prepending the base URL from context.
 
     Args:
@@ -69,10 +69,12 @@ def _build_url(base_url: str, url: str) -> str:
     """
     if not base_url.startswith("http"):
         base_url = "https://" + base_url
+    if url.startswith("http"):
+        url = url.lstrip("https://")
     return base_url.rstrip("/") + "/" + url.lstrip("/")
 
 
-def _extract_request_params(
+def extract_request_params(
     request_data: Dict[str, Any],
 ) -> Tuple[str, str, Any, Dict, Dict, Dict, Any]:
     """Extracts request parameters from the request data dictionary.
@@ -84,14 +86,14 @@ def _extract_request_params(
     url: str = request_data.get("url", "")
     timeout = request_data.get("timeout", None)
     headers = request_data.get("headers", {})
-    body: Union[Dict[str, Any], str, None] = request_data.get("body")
+    body: Union[Dict[str, Any], str, None] = request_data.get("body", None)
     params = request_data.get("params", {})
     cookies = request_data.get("cookies", {})
 
     return method, url, timeout, headers, params, cookies, body
 
 
-def _process_body(
+def process_body(
     body: Union[Dict[str, Any], str], headers: Dict[str, str], kwargs: Dict[str, Any]
 ) -> None:
     """Processes the request body and updates kwargs and headers accordingly.
@@ -159,6 +161,6 @@ class RequestBuilder:
         """Produces the keyword arguments for `requests.request`."""
         return build_request_data(self.context, self.resolved_step)
 
-    def _build_url(self, url: str) -> str:
+    def build_url(self, url: str) -> str:
         """Constructs a full URL by prepending the base URL from context."""
-        return _build_url(self.context.get("base_url", ""), url)
+        return build_url(self.context.get("base_url", ""), url)
