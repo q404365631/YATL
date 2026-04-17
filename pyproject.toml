@@ -2,6 +2,7 @@
 name = "yatl"
 version = "0.1.0"
 description = "Yet Another Testing Language"
+keywords = ["testing", "api", "yaml", "http", "rest", "declarative"]
 authors = [
     {name = "Khabib Shakhbanov"}
 ]
@@ -39,6 +40,3 @@ Homepage = "https://github.com/Khabib73/YATL"
 Documentation = "https://github.com/Khabib73/YATL#readme"
 Repository = "https://github.com/Khabib73/YATL"
 Issues = "https://github.com/Khabib73/YATL/issues"
-
-[project.keywords]
-keywords = ["testing", "api", "yaml", "http", "rest", "declarative"]
