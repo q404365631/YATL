@@ -6,7 +6,7 @@
 
 **YATL** is a declarative, YAML‑based testing language for API testing. If you know HTTP and YAML, you know YATL.
 
-## 🚀 Install & Run in 30 Seconds
+## 🚀 Install & Run
 
 ```bash
 pip install yatl-testing
@@ -19,7 +19,7 @@ name: ping
 base_url: google.com
 
 steps:
-  - name: access_test
+  - name: simple_test
     request:
       method: GET
     expect:
@@ -33,7 +33,6 @@ yatl ping.test.yaml
 ```
 
 That’s it!
-```
 
 ## Why YATL?
 
