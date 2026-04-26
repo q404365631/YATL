@@ -2,7 +2,7 @@ from typing import Any
 from requests import Response
 
 
-def is_skipped(item: dict[Any, Any]) -> bool:
+def is_skipped(item: dict[str, bool]) -> bool:
     """Checks if an item is skipped based on the "skip" flag.
 
     Args:

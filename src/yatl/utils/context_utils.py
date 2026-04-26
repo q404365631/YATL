@@ -2,7 +2,9 @@ from itertools import takewhile
 from typing import Any
 
 
-def create_context(test_spec: dict) -> dict[str, Any]:
+def create_context(
+    test_spec: dict[str, str | int | list[Any]],
+) -> dict[str, str | int]:
     """Creates the initial context from the test specification.
 
     The context consists of all top-level keys that appear before the

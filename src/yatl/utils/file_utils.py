@@ -21,7 +21,7 @@ class TestStructureError(LoadError):
     pass
 
 
-def load_test_yaml(file_path: str) -> dict[Any, Any] | bool:
+def load_test_yaml(file_path: str) -> dict[str, str | int | list[Any]] | bool:
     """Loads and parses a YAML test file.
 
     Args:
