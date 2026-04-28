@@ -7,6 +7,7 @@ format:
 typing:
 	poetry run mypy .
 
+.PHONY: integration_tests
 integration_tests:
 	poetry run python -m src.yatl.run
 
