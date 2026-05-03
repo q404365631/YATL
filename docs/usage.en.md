@@ -23,7 +23,7 @@ A YATL test file is a YAML document with the following top-level keys:
 
 Each step can contain the following fields:
 - `name` (optional): step name for identification in logs
-- `description` or `desc` (optional): detailed description of the step's purpose
+- `description` (optional): detailed description of the step's purpose
 - `skip` (optional): if `true`, the step will be skipped
 - `request` (required): HTTP request specification
 - `expect` (optional): response assertions
